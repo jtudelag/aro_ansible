@@ -25,10 +25,10 @@
 - hosts: localhost
   connection: local
   vars:
-    LOCATION: centralus
-    RESOURCEGROUP: aro
-    CLUSTER: aro-cluster
-    DOMAIN: openshifthelp.com
+    LOCATION: swedencentral
+    RESOURCEGROUP: jtudelag-aro
+    CLUSTER: jtudelag-cluster
+    DOMAIN: jtudelag.redhat.com
     MASTER_SIZE : Standard_D8s_v3
     WORKER_SIZE : Standard_D4s_v3
     WORKER_COUNT: 3
@@ -38,9 +38,11 @@
   - name: "Create resource group"
     command:
       cmd: az group create --name {{ RESOURCEGROUP }} --location {{ LOCATION }}
+
   - name: "Create a new virtual network in the same resource group you created earlier"
     command: az network vnet create --resource-group {{ RESOURCEGROUP }} \
               --name aro-vnet --address-prefixes 10.0.0.0/22
+
   - name: "Add an empty subnet for the master nodes"
     command: az network vnet subnet create \
               --resource-group {{ RESOURCEGROUP }} \
@@ -48,6 +50,7 @@
               --name master-subnet \
               --address-prefixes 10.0.0.0/23 \
               --service-endpoints Microsoft.ContainerRegistry
+
   - name: "Add an empty subnet for the worker nodes"
     command: az network vnet subnet create \
               --resource-group {{ RESOURCEGROUP }} \
@@ -55,25 +58,29 @@
               --name worker-subnet \
               --address-prefixes 10.0.2.0/23 \
               --service-endpoints Microsoft.ContainerRegistry
+
   - name: "Disable subnet private endpoint policies on the master subnet"
     command: az network vnet subnet update \
               --name master-subnet \
               --resource-group {{ RESOURCEGROUP }} \
               --vnet-name aro-vnet \
               --disable-private-link-service-network-policies true
+
   - name: "Now, let's create the ARO cluster. Please check back in roughly 20-30 minutes."
     command: az aro create \
               --resource-group {{ RESOURCEGROUP }} \
               --name {{ CLUSTER }} \
               --vnet aro-vnet \
               --master-subnet master-subnet \
-              --worker-subnet worker-subnet
-              --pull-secret @pull-secret.txt
-              --domain {{ DOMAIN }}
-              --master-vm-size {{ MASTER_SIZE }}
-              --worker-vm-size {{ WORKER_SIZE }}
-              --worker-count {{ WORKER_COUNT }}
-              --worker-vm-disk-size-gb {{ DISK_SIZE }}
+              --worker-subnet worker-subnet \
+              --pull-secret @pull-secret.txt \
+              --domain {{ DOMAIN }}  \ 
+              --master-vm-size {{ MASTER_SIZE }} \
+              --worker-vm-size {{ WORKER_SIZE }} \
+              --worker-count {{ WORKER_COUNT }} \
+              --worker-vm-disk-size-gb {{ DISK_SIZE }} \
+              --apiserver-visibility Public
+
 # Post install commands
   - name: "List Kubeadmin credentials"
     command: az aro list-credentials \
@@ -82,6 +89,7 @@
     register: results
   - debug:
       var: results.stdout
+
   - name: "List the OpenShift console URL"
     command: az aro show \
               --name {{ CLUSTER }} \
@@ -90,9 +98,11 @@
     register: results
   - debug:
       var: results.stdout
+
   - name: "List the cluster's details, including the API and ingress"
     command: az aro show 
-             --name {{ CLUSTER }} --resource-group {{ RESOURCEGROUP }}
+             --name {{ CLUSTER }} \
+             --resource-group {{ RESOURCEGROUP }}
     register: results
   - debug:
       var: results.stdout
