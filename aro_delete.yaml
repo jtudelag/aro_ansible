@@ -21,11 +21,19 @@
     DISK_SIZE: 128
 
   tasks:
-
-  - name: "List the cluster's details, including the API and ingress"
-    command: az aro delete \
-             --yes \
-             --resource-group {{ RESOURCEGROUP }} \
-             --name {{ CLUSTER}}
+  - name: Delete ARO cluster and the Azure Resource Group
+    block:
+      - name: "Delete ARO cluster"
+        command: az aro delete \
+                 --yes \
+                 --resource-group {{ RESOURCEGROUP }} \
+                 --name {{ CLUSTER}}
+            
+      - name: "Delete Resource Group"
+        command: az group delete \
+                 --yes \
+                 --name {{ RESOURCEGROUP }}
     when:
       - answer == "y"
+
+  
