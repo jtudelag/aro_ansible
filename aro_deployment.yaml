@@ -35,44 +35,51 @@
     DISK_SIZE: 128
 
   tasks:
+
+  - name: Setting some ARO facts
+    ansible.builtin.set_fact:
+      ARO_VNET: "{{ CLUSTER }}-aro-vnet"
+      ARO_MASTER_SUBNET: "{{ CLUSTER }}-aro-master-subnet"
+      ARO_WORKER_SUBNET: "{{ CLUSTER }}-aro-worker-subnet"
+  
   - name: "Create resource group"
     command:
       cmd: az group create --name {{ RESOURCEGROUP }} --location {{ LOCATION }}
 
   - name: "Create a new virtual network in the same resource group you created earlier"
     command: az network vnet create --resource-group {{ RESOURCEGROUP }} \
-              --name aro-vnet --address-prefixes 10.0.0.0/22
+              --name {{ ARO_VNET }} --address-prefixes 10.0.0.0/22
 
   - name: "Add an empty subnet for the master nodes"
     command: az network vnet subnet create \
               --resource-group {{ RESOURCEGROUP }} \
-              --vnet-name aro-vnet \
-              --name master-subnet \
+              --vnet-name {{ ARO_VNET }} \
+              --name {{ ARO_MASTER_SUBNET }} \
               --address-prefixes 10.0.0.0/23 \
               --service-endpoints Microsoft.ContainerRegistry
 
   - name: "Add an empty subnet for the worker nodes"
     command: az network vnet subnet create \
               --resource-group {{ RESOURCEGROUP }} \
-              --vnet-name aro-vnet \
-              --name worker-subnet \
+              --vnet-name {{ ARO_VNET }} \
+              --name {{ ARO_WORKER_SUBNET }} \
               --address-prefixes 10.0.2.0/23 \
               --service-endpoints Microsoft.ContainerRegistry
 
   - name: "Disable subnet private endpoint policies on the master subnet"
     command: az network vnet subnet update \
-              --name master-subnet \
+              --name {{ ARO_MASTER_SUBNET }} \
               --resource-group {{ RESOURCEGROUP }} \
-              --vnet-name aro-vnet \
+              --vnet-name {{ ARO_VNET }} \
               --disable-private-link-service-network-policies true
 
   - name: "Now, let's create the ARO cluster. Please check back in roughly 20-30 minutes."
     command: az aro create \
               --resource-group {{ RESOURCEGROUP }} \
               --name {{ CLUSTER }} \
-              --vnet aro-vnet \
-              --master-subnet master-subnet \
-              --worker-subnet worker-subnet \
+              --vnet {{ ARO_VNET }} \
+              --master-subnet {{ ARO_MASTER_SUBNET }} \
+              --worker-subnet {{ ARO_WORKER_SUBNET }} \
               --pull-secret @pull-secret.txt \
               --domain {{ DOMAIN }}  \ 
               --master-vm-size {{ MASTER_SIZE }} \
