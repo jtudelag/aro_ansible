@@ -15,7 +15,7 @@
   tasks:
   - name: "Set Subscription"
     command:
-      cmd: az account set --subscription {{ SUBSCRIPTION ID }}
+      cmd: az account set --subscription {{ SUBSCRIPTION }}
   
   - name: "Register the Microsoft.Compute resource provider"
     command:
