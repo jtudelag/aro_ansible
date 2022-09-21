@@ -1,0 +1,31 @@
+# Description
+# ===========
+# This playbook deeltes an Azure Red Hat OpenShift cluster
+# https://learn.microsoft.com/en-us/azure/openshift/tutorial-delete-cluster#delete-the-cluster
+
+- hosts: localhost
+  connection: local
+
+  vars_prompt:
+  - name: answer
+    prompt: "Do you really want to delete the OpenShift cluster? y/n?"
+
+  vars:
+    LOCATION: swedencentral
+    RESOURCEGROUP: jtudelag-aro
+    CLUSTER: jtudelag-cluster
+    DOMAIN: jtudelag.redhat.com
+    MASTER_SIZE : Standard_D8s_v3
+    WORKER_SIZE : Standard_D4s_v3
+    WORKER_COUNT: 3
+    DISK_SIZE: 128
+
+  tasks:
+
+  - name: "List the cluster's details, including the API and ingress"
+    command: az aro delete \
+             --yes \
+             --resource-group {{ RESOURCEGROUP }} \
+             --name {{ CLUSTER}}
+    when:
+      - answer == "y"
